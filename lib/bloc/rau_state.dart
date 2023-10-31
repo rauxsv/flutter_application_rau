@@ -1,11 +1,11 @@
-import 'package:flutter_application_rau/main.dart';
+import 'package:flutter_application_rau/models/post_model.dart';
 
 abstract class RAUState {}
 
 class RAUInitial extends RAUState {}
 
 class CommentsLoaded extends RAUState {
-  final List<Comment> comments;
+  final List<PostModel> comments; // <-- Замените Comment на PostModel
 
   CommentsLoaded(this.comments);
 }

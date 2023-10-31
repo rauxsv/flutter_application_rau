@@ -4,6 +4,9 @@ import 'package:flutter_application_rau/bloc/rau_bloc.dart';
 import 'package:flutter_application_rau/bloc/rau_event.dart';
 import 'package:flutter_application_rau/bloc/rau_state.dart';
 import 'package:lottie/lottie.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter_application_rau/models/post_model.dart';
+import 'package:flutter_application_rau/service/api_service.dart';
 
 void main() => runApp(MyApp());
 
@@ -29,12 +32,14 @@ class _MyHomePageState extends State<MyHomePage> {
   int _currentIndex = 0;
   late List<Widget> _pages;
   final RAUBloc _bloc = RAUBloc();
+  final Dio _dio = Dio();  
+  late final ApiService _apiService = ApiService(_dio);
 
   @override
   void initState() {
     super.initState();
     _pages = [
-      CommentPage(_bloc),
+      CommentPage(_bloc, _apiService),
       Page2(),
       Page3(),
       Page4(),
@@ -98,71 +103,44 @@ class _MyHomePageState extends State<MyHomePage> {
 
 class CommentPage extends StatelessWidget {
   final RAUBloc bloc;
-  CommentPage(this.bloc);
+  final ApiService apiService;
+
+  CommentPage(this.bloc, this.apiService);
+  
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Comments')),
-      body: StreamBuilder<RAUState>(
-        initialData: RAUInitial(),
-        stream: bloc.state,
+      appBar: AppBar(title: Text('Posts')),
+      body: FutureBuilder<List<PostModel>>(
+        future: apiService.getPosts(),
         builder: (context, snapshot) {
-          if (snapshot.hasData && snapshot.data is CommentsLoaded) {
-            List<Comment> comments = (snapshot.data as CommentsLoaded).comments;
+          if (snapshot.connectionState == ConnectionState.done) {
+            if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            }
+
+
+            final posts = snapshot.data!;
             return ListView.builder(
-              itemCount: comments.length,
+              itemCount: posts.length,
               itemBuilder: (context, index) {
-                Comment comment = comments[index];
+                final post = posts[index];
                 return ListTile(
-                  title: Text(comment.name),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('postId: ${comment.postId}'),
-                      Text('id: ${comment.id}'),
-                      Text('email: ${comment.email}'),
-                      Text('body: ${comment.body}'),
-                    ],
-                  ),
+                  title: Text(post.title),
+                  subtitle: Text(post.body),
                 );
               },
             );
-          } else if (snapshot.hasData && snapshot.data is CommentsError) {
-            return Center(
-                child: Text((snapshot.data as CommentsError).message));
+          } else {
+            return Center(child: CircularProgressIndicator());
           }
-          return Center(child: CircularProgressIndicator());
         },
       ),
     );
   }
 }
 
-class Comment {
-  final int postId;
-  final int id;
-  final String name;
-  final String email;
-  final String body;
-
-  Comment(
-      {required this.postId,
-      required this.id,
-      required this.name,
-      required this.email,
-      required this.body});
-
-  factory Comment.fromJson(Map<String, dynamic> json) {
-    return Comment(
-      postId: json['postId'],
-      id: json['id'],
-      name: json['name'],
-      email: json['email'],
-      body: json['body'],
-    );
-  }
-}
 
 class Page2 extends StatelessWidget {
   @override
@@ -186,7 +164,7 @@ class Page4 extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Icon(Icons.photo, size: 100, color: Colors.blue),
+      child: Lottie.asset('assets/theirani.json'),
     );
   }
 }

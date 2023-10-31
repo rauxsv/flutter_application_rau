@@ -1,9 +1,9 @@
 import 'dart:async';
-import 'package:flutter_application_rau/main.dart';
+import 'package:flutter_application_rau/models/post_model.dart';
 import 'rau_event.dart';
 import 'rau_state.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:dio/dio.dart'; 
+import 'package:flutter_application_rau/service/api_service.dart';    
 
 class RAUBloc {
   final _stateController = StreamController<RAUState>.broadcast();
@@ -12,6 +12,8 @@ class RAUBloc {
 
   final _eventController = StreamController<RAUEvent>();
   Sink<RAUEvent> get addEvent => _eventController.sink;
+
+  final ApiService apiService = ApiService(Dio());  
 
   RAUBloc() {
     _eventController.stream.listen((event) async {
@@ -26,16 +28,10 @@ class RAUBloc {
     });
   }
 
-  Future<List<Comment>?> _fetchComments() async {
+  Future<List<PostModel>?> _fetchComments() async {   
     try {
-      final response = await http.get(
-          Uri.parse('https://jsonplaceholder.typicode.com/posts/1/comments'));
-      if (response.statusCode == 200) {
-        List<dynamic> jsonResponse = json.decode(response.body);
-        return jsonResponse.map((data) => Comment.fromJson(data)).toList();
-      } else {
-        return null;
-      }
+      final response = await apiService.getPosts();   
+      return response;                               
     } catch (error) {
       return null;
     }
